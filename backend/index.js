@@ -28,7 +28,7 @@ app.get("/health/db", async (req, res) => {
 })
 
 app.use("/auth", authRouter)
-// app.use("/tasks", requireAuth, tasksRouter)
+app.use("/tasks", requireAuth, tasksRouter)
 
 app.listen(process.env.PORT, () => {
     console.log(`Server running on http://localhost:${process.env.PORT}`)
