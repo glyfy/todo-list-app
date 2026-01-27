@@ -15,7 +15,6 @@ function requireAuth(req, res, next){
         const token = parts[1]
         // verify jwt
         const decoded = jwt.verify(token, process.env.JWT_SECRET_TOKEN)
-        console.log(decoded)
         // add userid to req
         req.user = {id: decoded.id}
         // call next
