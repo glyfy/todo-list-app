@@ -1,3 +1,4 @@
+const { validate: isUUID } = require("uuid");
 const pool = require('../db')
 const express = require('express')
 const router = express.Router()
@@ -72,6 +73,30 @@ router.patch("/:id", async (req, res) => {
         // return status 200 and updated task
     } catch(error) {
         // status 500
+    }
+})
+
+router.delete("/:id", async (req, res) => {
+    try {
+        // get param
+        const {task_id} = req.params
+        if (!isUUID(task_id)){
+            return res.status(400).json({error: "Invalid task id"})
+        }
+        // sql query to delete task (check with taskid and userid)
+        const result = await pool.query(
+        `
+        delete from public.users
+        where id = $1 and user_id = $2
+        returning id
+        `, [task_id, user_id])
+        if (result.rowCount == 0) {
+            return res.status(404).json({error:"Task not found"})
+        }
+        return res.status(200).json({task: result.rows}) 
+    } catch(error) {
+        // internal server error
+        return res.status(500).json({error:"Internal server error"})
     }
 })
 
