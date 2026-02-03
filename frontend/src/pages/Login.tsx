@@ -17,10 +17,13 @@ import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Visibility from "@mui/icons-material/Visibility";
-import { Link, OutlinedInput } from "@mui/material";
+import { FormHelperText, Link, OutlinedInput } from "@mui/material";
 
 const Login = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = React.useState(false);
+  const [passwordError, setPasswordError] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [emailTouched, setEmailTouched] = React.useState(false);
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -33,7 +36,44 @@ const Login = () => {
     event.preventDefault();
   };
   // handlesubmit function for the form element
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (emailError || passwordError) {
+      return;
+    }
+    const data = new FormData(event.currentTarget);
+    console.log({
+      email: data.get("email"),
+      password: data.get("password"),
+    });
+    // send http to backend
+    // if success, log user into next page
+  };
   // handleclick function for the submit element
+  const validateInputs = () => {
+    const email = document.getElementById("email") as HTMLInputElement;
+    const password = document.getElementById("password") as HTMLInputElement;
+
+    console.log(email.value);
+    console.log(password.value);
+    let isValid = true;
+
+    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+      setEmailError(true);
+      setEmailTouched(false);
+      isValid = false;
+    } else {
+      setEmailError(false);
+    }
+
+    if (!password.value || password.value.length < 6) {
+      setPasswordError(true);
+      isValid = false;
+    } else {
+      setPasswordError(false);
+    }
+    return isValid;
+  };
   return (
     <Grid container sx={{ minHeight: "100dvh", minWidth: "100%" }}>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -103,12 +143,16 @@ const Login = () => {
             {/* // divider */}
             <Divider />
             {/* // box for login forms (label form) */}
-            <Stack spacing={2}>
+            <Stack spacing={2} component="form" onSubmit={handleSubmit}>
               {/* // formcontrol, label: email, textfield */}
               <FormControl>
                 <TextField
                   variant="outlined"
                   label="Email"
+                  id="email"
+                  onFocus={() => {
+                    setEmailError(false);
+                  }}
                   placeholder="Enter your personal or your work email..."
                   sx={{
                     "& .MuiFilledInput-input": {
@@ -116,6 +160,11 @@ const Login = () => {
                     },
                   }}
                 />
+                <FormHelperText error={emailError}>
+                  {emailError && !emailTouched
+                    ? "Please enter a valid email"
+                    : ""}
+                </FormHelperText>
               </FormControl>
               {/* // formcontrol for password */}
               <FormControl variant="outlined">
@@ -128,7 +177,10 @@ const Login = () => {
                       backgroundColor: "#ffffff",
                     },
                   }}
-                  id="outlined-adornment-password"
+                  onFocus={() => {
+                    setPasswordError(false);
+                  }}
+                  id="password"
                   type={showPassword ? "text" : "password"}
                   endAdornment={
                     <InputAdornment position="end">
@@ -149,6 +201,9 @@ const Login = () => {
                   }
                   label="Password"
                 />
+                <FormHelperText error={passwordError}>
+                  {passwordError ? "Please enter a valid password" : ""}
+                </FormHelperText>
               </FormControl>
               {/* // button "sign up with email" (label submit) */}
               <Button
@@ -160,6 +215,8 @@ const Login = () => {
                 }}
                 variant="contained"
                 color="primary"
+                type="submit"
+                onClick={validateInputs}
               >
                 Sign up with Email
               </Button>
