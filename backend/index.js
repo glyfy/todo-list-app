@@ -28,8 +28,8 @@ app.get("/health/db", async (req, res) => {
   }
 });
 
-app.get("/me", async (req, res) => {
-  const user_id = req.userId;
+app.get("/me", requireAuth, async (req, res) => {
+  const user_id = req.user_id;
   try {
     // try and find user
     const result = await pool.query(

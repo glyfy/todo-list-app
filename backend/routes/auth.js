@@ -67,7 +67,7 @@ router.post("/login", async (req, res) => {
     }
     // issue json webtoken
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { user_id: user.id, email: user.email },
       process.env.JWT_SECRET_TOKEN,
       { expiresIn: "7d" },
     );
@@ -80,7 +80,7 @@ router.post("/login", async (req, res) => {
     });
     // return status200 and user json
     return res.status(200).json({
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { user_id: user.id, email: user.email, name: user.name },
     });
   } catch (error) {
     console.error(error);
