@@ -4,7 +4,6 @@ import Content from "../components/Content";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
-// import Grid from '@mui/material/Grid2';
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
@@ -16,17 +15,8 @@ import IconButton from "@mui/material/IconButton";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Visibility from "@mui/icons-material/Visibility";
 import { FormHelperText, Link, OutlinedInput } from "@mui/material";
-import { api } from "../lib/api";
 
-const Login = () => {
-  type LoginResponse = {
-    token: string;
-    user: {
-      id: string;
-      email: string;
-      name: string;
-    };
-  };
+const SignUp = () => {
   const [emailError, setEmailError] = React.useState(false);
   const [passwordError, setPasswordError] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
@@ -43,7 +33,7 @@ const Login = () => {
     event.preventDefault();
   };
   // handlesubmit function for the form element
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (emailError || passwordError) {
       return;
@@ -54,7 +44,6 @@ const Login = () => {
       password: data.get("password"),
     });
     // send http to backend
-    const res = await api<LoginResponse>("/api/auth/login");
     // if success, log user into next page
   };
   // handleclick function for the submit element
@@ -98,7 +87,7 @@ const Login = () => {
           <Card variant="string" sx={{ width: "clamp(320px, 90vw, 420px)" }}>
             {/* // typology component for "sign in" */}
             <Typography fontWeight={700} fontSize={32}>
-              Welcome back!
+              Sign up
             </Typography>
             {/* // box for sign in options */}
             <Stack
@@ -226,13 +215,9 @@ const Login = () => {
                 type="submit"
                 onClick={validateInputs}
               >
-                Log in
+                Sign up with Email
               </Button>
-
               {/* // typography terms and conditions */}
-              <Link sx={{ fontWeight: "400", fontSize: "13px" }}>
-                Forgot your password?
-              </Link>
               <Typography sx={{ fontWeight: "400", fontSize: "13px" }}>
                 By continuing with Google, Apple, or Email, you agree to
                 TodoList’s Terms of Service and Privacy Policy.
@@ -243,8 +228,8 @@ const Login = () => {
                 sx={{ fontWeight: "400", fontSize: "13px" }}
                 align="center"
               >
-                Don't have an account?
-                <Link href="/signup"> Sign up</Link>
+                Already signed up?
+                <Link href="/"> Go to login</Link>
               </Typography>
             </Stack>
           </Card>
@@ -266,4 +251,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;
