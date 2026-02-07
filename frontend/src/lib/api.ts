@@ -1,22 +1,49 @@
-// src/lib/api.ts
-type ApiError = { error: string };
+import { ApiError } from "../types/api";
+
+function isJsonResponse(res: Response) {
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json");
+}
 
 export async function api<T>(path: string, opts: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, {
-    ...opts,
-    headers: {
-      "Content-Type": "application/json",
-      ...(opts.headers || {}),
-    },
-    credentials: "include", // remove if you're NOT using cookies
-  });
+  let res: Response;
+
+  try {
+    res = await fetch(path, {
+      ...opts,
+      headers: {
+        "Content-Type": "application/json",
+        ...(opts.headers || {}),
+      },
+      credentials: "include",
+    });
+  } catch (e) {
+    // Network error / request blocked / aborted, etc.
+    throw new ApiError("Network error. Please check your connection.", 0);
+  }
 
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+
+  let data: any = null;
+  if (text && isJsonResponse(res)) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // Bad JSON from server
+      throw new ApiError("Server returned invalid JSON.", res.status);
+    }
+  }
 
   if (!res.ok) {
-    const err = (data ?? {}) as ApiError;
-    throw new Error(err.error || `Request failed (${res.status})`);
+    const message =
+      data &&
+      typeof data === "object" &&
+      "error" in data &&
+      typeof data.error === "string"
+        ? data.error
+        : text || `Request failed (${res.status})`;
+
+    throw new ApiError(message, res.status);
   }
 
   return data as T;

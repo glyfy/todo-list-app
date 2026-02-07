@@ -50,9 +50,6 @@ const SignUp = () => {
   const validateInputs = () => {
     const email = document.getElementById("email") as HTMLInputElement;
     const password = document.getElementById("password") as HTMLInputElement;
-
-    console.log(email.value);
-    console.log(password.value);
     let isValid = true;
 
     if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {

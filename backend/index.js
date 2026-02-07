@@ -49,8 +49,12 @@ app.get("/me", requireAuth, async (req, res) => {
   }
 });
 
-app.use("/auth", authRouter);
-app.use("/tasks", requireAuth, tasksRouter);
+app.get("/api/debug/500", (req, res) => {
+  res.status(500).json({ message: "Simulated 500" });
+});
+
+app.use("/api/auth", authRouter);
+app.use("/api/tasks", requireAuth, tasksRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on http://localhost:${process.env.PORT}`);

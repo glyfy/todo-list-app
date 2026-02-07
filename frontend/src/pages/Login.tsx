@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Stack from "@mui/material/Stack";
 import Content from "../components/Content";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
-// import Grid from '@mui/material/Grid2';
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
@@ -17,10 +16,14 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Visibility from "@mui/icons-material/Visibility";
 import { FormHelperText, Link, OutlinedInput } from "@mui/material";
 import { api } from "../lib/api";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../AuthContext";
+import { User } from "../types/user";
+import { ApiError } from "../types/api";
+import { useSnackbar } from "../../SnackbarProvider";
 
 const Login = () => {
   type LoginResponse = {
-    token: string;
     user: {
       id: string;
       email: string;
@@ -31,6 +34,11 @@ const Login = () => {
   const [passwordError, setPasswordError] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [emailTouched, setEmailTouched] = React.useState(false);
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const { showSnackbar } = useSnackbar();
+  const { setUser } = useAuth();
+  //   const navigate = useNavigate();
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -49,24 +57,38 @@ const Login = () => {
       return;
     }
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
-    });
-    // send http to backend
-    const res = await api<LoginResponse>("/api/auth/login");
-    // if success, log user into next page
+    try {
+      // send http to backend
+      const { user } = await api<LoginResponse>("api/auth/login", {
+        method: "POST",
+        headers: {},
+        body: JSON.stringify({ email, password }),
+      });
+      //update context
+      setUser({ id: user.id, email: user.email, name: user.name } as User);
+      // go to the user dashboard
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 400 || error.status === 401) {
+          // blank fields or bad credentials
+          // set email error
+          setEmailError(true);
+          setPasswordError(true);
+        } else if (error.status >= 500) {
+          // snackbar
+          showSnackbar("Server error", "error");
+        }
+      } else {
+        console.error(error);
+        showSnackbar("Unexpected error occured. Please try again");
+      }
+    }
   };
   // handleclick function for the submit element
   const validateInputs = () => {
-    const email = document.getElementById("email") as HTMLInputElement;
-    const password = document.getElementById("password") as HTMLInputElement;
-
-    console.log(email.value);
-    console.log(password.value);
     let isValid = true;
 
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setEmailError(true);
       setEmailTouched(false);
       isValid = false;
@@ -74,7 +96,7 @@ const Login = () => {
       setEmailError(false);
     }
 
-    if (!password.value || password.value.length < 6) {
+    if (!password || password.length < 6) {
       setPasswordError(true);
       isValid = false;
     } else {
@@ -161,6 +183,9 @@ const Login = () => {
                   onFocus={() => {
                     setEmailError(false);
                   }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                  }}
                   placeholder="Enter your personal or your work email..."
                   sx={{
                     "& .MuiFilledInput-input": {
@@ -187,6 +212,9 @@ const Login = () => {
                   }}
                   onFocus={() => {
                     setPasswordError(false);
+                  }}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
                   }}
                   id="password"
                   type={showPassword ? "text" : "password"}
