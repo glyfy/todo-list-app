@@ -59,15 +59,16 @@ const Login = () => {
     const data = new FormData(event.currentTarget);
     try {
       // send http to backend
-      const { user } = await api<LoginResponse>("api/auth/login", {
-        method: "POST",
+      const { user } = await api<LoginResponse>("/api/debug/500", {
+        method: "GET",
         headers: {},
-        body: JSON.stringify({ email, password }),
+        // body: JSON.stringify({ email, password }),
       });
       //update context
       setUser({ id: user.id, email: user.email, name: user.name } as User);
       // go to the user dashboard
     } catch (error) {
+      console.log(error);
       if (error instanceof ApiError) {
         if (error.status === 400 || error.status === 401) {
           // blank fields or bad credentials
@@ -76,11 +77,11 @@ const Login = () => {
           setPasswordError(true);
         } else if (error.status >= 500) {
           // snackbar
-          showSnackbar("Server error", "error");
+          showSnackbar("Server error. Please try again.", "error");
         }
       } else {
         console.error(error);
-        showSnackbar("Unexpected error occured. Please try again");
+        showSnackbar("Unexpected error occured. Please try again.");
       }
     }
   };

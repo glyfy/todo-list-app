@@ -3,11 +3,12 @@ import { defineConfig } from "vite";
 export default defineConfig({
   server: {
     proxy: {
-      "/api/auth": {
+      "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
         secure: false,
       },
+
       "/me": {
         target: "http://localhost:3000",
         changeOrigin: true,

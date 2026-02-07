@@ -17,6 +17,7 @@ export async function api<T>(path: string, opts: RequestInit = {}): Promise<T> {
       },
       credentials: "include",
     });
+    console.log(res);
   } catch (e) {
     // Network error / request blocked / aborted, etc.
     throw new ApiError("Network error. Please check your connection.", 0);

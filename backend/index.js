@@ -50,6 +50,7 @@ app.get("/me", requireAuth, async (req, res) => {
 });
 
 app.get("/api/debug/500", (req, res) => {
+  console.log("in 500");
   res.status(500).json({ message: "Simulated 500" });
 });
 
