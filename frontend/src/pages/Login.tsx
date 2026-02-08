@@ -59,10 +59,10 @@ const Login = () => {
     const data = new FormData(event.currentTarget);
     try {
       // send http to backend
-      const { user } = await api<LoginResponse>("/api/debug/500", {
-        method: "GET",
+      const { user } = await api<LoginResponse>("/api/auth/login", {
+        method: "POST",
         headers: {},
-        // body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password }),
       });
       //update context
       setUser({ id: user.id, email: user.email, name: user.name } as User);
