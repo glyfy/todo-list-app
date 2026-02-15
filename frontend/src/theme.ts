@@ -1,8 +1,18 @@
 import { createTheme } from "@mui/material";
-import { red } from "@mui/material/colors";
+import { grey, red } from "@mui/material/colors";
 
 export const theme = createTheme({
   palette: {
     primary: red,
+    secondary: grey,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: "none",
+        },
+      },
+    },
   },
 });

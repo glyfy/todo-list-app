@@ -1,12 +1,14 @@
-import { Box, Button } from "@mui/material";
+import { Box, Button, Fab, Stack, Typography } from "@mui/material";
 import { useAuth } from "../../AuthContext";
 import { useSnackbar } from "../../SnackbarProvider";
 import { api } from "../lib/api";
 import { useEffect, useState } from "react";
 import { Task } from "../types/task";
 import TaskItem from "../components/TaskItem";
+import AddIcon from "@mui/icons-material/Add";
+import AddTaskForm, { AddTaskPayload } from "../components/AddTaskForm";
 
-const dummyTasks: Task[] = [
+let dummyTasks: Task[] = [
   {
     id: "1",
     title: "task 1",
@@ -31,6 +33,8 @@ const TasksDashboard = () => {
   const { showSnackbar } = useSnackbar();
   const { setUser, user } = useAuth();
   const [tasks, setTasks] = useState([]);
+  const [isAdding, setisAdding] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const LEFT_W = 320;
   const handleClick = () => {
     try {
@@ -40,10 +44,27 @@ const TasksDashboard = () => {
       showSnackbar("Unexpected error occured. Please try again");
     }
   };
+
   useEffect(() => {
     // api call to get tasks
     setTasks(dummyTasks);
   }, []);
+
+  const updateIsAdding = () => {
+    setisAdding((prev) => !prev);
+  };
+  const handleCreateTask = async (payload: AddTaskPayload) => {
+    // api call
+    // if successful, add task to list
+    const task = {
+      id: 4,
+      title: payload.title,
+      startDate: payload.startDate,
+      deadline: payload.deadline,
+    };
+    setTasks((prev) => [...prev, task]);
+  };
+
   return (
     <>
       <Box sx={{ display: "flex", minHeight: "100dvh", width: "100%" }}>
@@ -77,9 +98,32 @@ const TasksDashboard = () => {
               py: 3,
             }}
           >
+            <Typography
+              sx={{ color: "black", fontWeight: 700, fontSize: "26px" }}
+            >
+              Today
+            </Typography>
             {tasks.map((task) => (
               <TaskItem task={task} />
             ))}
+            {isAdding ? null : (
+              <Button
+                variant="text"
+                color="primary"
+                startIcon={<AddIcon sx={{ color: "primary.main" }} />}
+                sx={{ textTransform: "none", mt: 2, color: "text.secondary" }}
+                onClick={updateIsAdding}
+              >
+                Add Task
+              </Button>
+            )}
+
+            {isAdding && (
+              <AddTaskForm
+                onCancel={updateIsAdding}
+                onSubmit={handleCreateTask}
+              />
+            )}
           </Box>
         </Box>
       </Box>
