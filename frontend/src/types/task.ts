@@ -1,6 +1,7 @@
 export type Task = {
-  id: string;
+  user_id: string;
   title: string;
-  startDate: Date;
-  deadline?: Date;
+  startDate: string;
+  deadline?: string;
+  completedAt?: string;
 };

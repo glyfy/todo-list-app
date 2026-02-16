@@ -4,13 +4,21 @@ import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
 import { Task } from "../types/task";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
+import { formatTime } from "../lib/dateUtil";
 
 type TaskItemProps = {
   task: Task;
 };
 
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  day: "2-digit",
+  month: "short", // "Mar"
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 export default function TaskItem({ task }: TaskItemProps) {
-  console.log(task);
   return (
     <>
       <Stack
@@ -28,15 +36,17 @@ export default function TaskItem({ task }: TaskItemProps) {
             <Stack direction="row" alignItems="center">
               <CalendarTodayIcon sx={{ color: "black" }} />
               <Typography sx={{ color: "black" }} variant="body2">
-                {task.startDate?.toLocaleDateString?.()}
+                {formatTime(timeFormatter, task.startDate)}
               </Typography>
             </Stack>
-            <Stack direction="row" alignItems="center">
-              <SportsScoreIcon sx={{ color: "black" }} />
-              <Typography sx={{ color: "black" }} variant="body2">
-                {task.deadline?.toLocaleDateString?.()}
-              </Typography>
-            </Stack>
+            {task.deadline && (
+              <Stack direction="row" alignItems="center">
+                <SportsScoreIcon sx={{ color: "black" }} />
+                <Typography sx={{ color: "black" }} variant="body2">
+                  {task.deadline && formatTime(timeFormatter, task.deadline)}
+                </Typography>
+              </Stack>
+            )}
           </Stack>
         </Stack>
       </Stack>

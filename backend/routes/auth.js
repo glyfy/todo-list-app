@@ -80,7 +80,7 @@ router.post("/login", async (req, res) => {
     });
     // return status200 and user json
     return res.status(200).json({
-      user: { user_id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (error) {
     console.error(error);

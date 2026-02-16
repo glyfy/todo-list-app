@@ -15,7 +15,7 @@ type AddTaskFormProps = {
 export type AddTaskPayload = {
   title: string;
   startDate: Date;
-  deadline: Date;
+  deadline?: Date;
 };
 
 export default function AddTaskForm({
@@ -35,7 +35,7 @@ export default function AddTaskForm({
     onSubmit({
       title: title.trim(),
       startDate: startDate.toDate(),
-      deadline: deadline?.toDate() ?? new Date(),
+      deadline: deadline?.toDate(),
     });
   };
 

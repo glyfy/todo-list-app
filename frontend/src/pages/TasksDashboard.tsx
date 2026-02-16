@@ -7,25 +7,27 @@ import { Task } from "../types/task";
 import TaskItem from "../components/TaskItem";
 import AddIcon from "@mui/icons-material/Add";
 import AddTaskForm, { AddTaskPayload } from "../components/AddTaskForm";
+import { ApiError } from "../types/api";
+import { UNEXPECTED_ERROR_MESSAGE } from "../lib/errorMessage";
 
 let dummyTasks: Task[] = [
   {
-    id: "1",
+    user_id: "1",
     title: "task 1",
-    startDate: new Date("2026-03-15T10:30:00"),
-    deadline: new Date("2026-03-17T10:30:00"),
+    startDate: "2026-03-15T10:30:00",
+    deadline: "2026-03-17T10:30:00",
   },
   {
-    id: "2",
+    user_id: "2",
     title: "task 2",
-    startDate: new Date("2026-03-15T10:30:00"),
-    deadline: new Date("2026-03-17T10:30:00"),
+    startDate: "2026-03-15T10:30:00",
+    deadline: "2026-03-17T10:30:00",
   },
   {
-    id: "3",
+    user_id: "3",
     title: "task 3",
-    startDate: new Date("2026-03-15T10:30:00"),
-    deadline: new Date("2026-03-17T10:30:00"),
+    startDate: "2026-03-15T10:30:00",
+    deadline: "2026-03-17T10:30:00",
   },
 ];
 const TasksDashboard = () => {
@@ -36,12 +38,12 @@ const TasksDashboard = () => {
   const [isAdding, setisAdding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const LEFT_W = 320;
-  const handleClick = () => {
+  const handleClick = async () => {
     try {
-      api<LogoutResponse>("/api/auth/logout", { method: "POST" });
+      await api<LogoutResponse>("/api/auth/logout", { method: "POST" });
       setUser(null);
     } catch {
-      showSnackbar("Unexpected error occured. Please try again");
+      showSnackbar(UNEXPECTED_ERROR_MESSAGE);
     }
   };
 
@@ -54,15 +56,21 @@ const TasksDashboard = () => {
     setisAdding((prev) => !prev);
   };
   const handleCreateTask = async (payload: AddTaskPayload) => {
+    console.log(payload);
     // api call
-    // if successful, add task to list
-    const task = {
-      id: 4,
-      title: payload.title,
-      startDate: payload.startDate,
-      deadline: payload.deadline,
-    };
-    setTasks((prev) => [...prev, task]);
+    try {
+      const res = await api<{ task: Task }>("/api/tasks", {
+        method: "POST",
+        body: JSON.stringify({ ...payload }),
+      });
+      const task = res.task;
+      // if successful, add task to list
+      setTasks((prev) => [...prev, task]);
+    } catch (e) {
+      if (e instanceof ApiError) {
+        showSnackbar(e.message);
+      } else showSnackbar(UNEXPECTED_ERROR_MESSAGE);
+    }
   };
 
   return (
@@ -127,7 +135,7 @@ const TasksDashboard = () => {
           </Box>
         </Box>
       </Box>
-      <button onClick={handleClick}>Logout</button>;
+      <button onClick={handleClick}>Logout</button>
     </>
   );
 };
