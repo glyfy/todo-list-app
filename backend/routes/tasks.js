@@ -100,7 +100,7 @@ router.delete("/:id", async (req, res) => {
         where id = $1 and user_id = $2
         returning id
         `,
-      [task_id, req.user.id],
+      [task_id, req.user_id],
     );
     if (result.rowCount == 0) {
       return res.status(404).json({ error: "Task not found" });
