@@ -10,7 +10,7 @@ router.get("/", async (req, res) => {
       `
         select * from public.tasks where user_id = $1 
         `,
-      [req.user.id],
+      [req.user_id],
     );
     return res.json({ tasks: result.rows });
     // return tasks
@@ -58,11 +58,11 @@ router.post("/", async (req, res) => {
     // Single insert: pass null when optional fields not provided
     const result = await pool.query(
       `
-      insert into public.tasks (user_id, title, startdate, due_at, completed_at)
+      insert into public.tasks (user_id, title, startdate, deadline, completed_at)
       values ($1, $2, $3, $4, $5)
-      returning id, user_id, title, startdate, due_at, completed_at
+      returning id, user_id, title, startdate, deadline, completed_at
       `,
-      [req.user.id, title, startdate, deadline, null],
+      [req.user_id, title, startdate, deadline, null],
     );
 
     return res.status(201).json({ task: result.rows[0] });
