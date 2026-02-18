@@ -4,37 +4,17 @@ import { useSnackbar } from "../../SnackbarProvider";
 import { api } from "../lib/api";
 import { useEffect, useState } from "react";
 import { Task } from "../types/task";
-import TaskItem from "../components/TaskItem";
+import TaskItem, { updateTaskPayload } from "../components/TaskItem";
 import AddIcon from "@mui/icons-material/Add";
 import AddTaskForm, { AddTaskPayload } from "../components/AddTaskForm";
 import { ApiError } from "../types/api";
 import { UNEXPECTED_ERROR_MESSAGE } from "../lib/errorMessage";
 
-let dummyTasks: Task[] = [
-  {
-    user_id: "1",
-    title: "task 1",
-    startDate: "2026-03-15T10:30:00",
-    deadline: "2026-03-17T10:30:00",
-  },
-  {
-    user_id: "2",
-    title: "task 2",
-    startDate: "2026-03-15T10:30:00",
-    deadline: "2026-03-17T10:30:00",
-  },
-  {
-    user_id: "3",
-    title: "task 3",
-    startDate: "2026-03-15T10:30:00",
-    deadline: "2026-03-17T10:30:00",
-  },
-];
 const TasksDashboard = () => {
   type LogoutResponse = { ok: Boolean };
   const { showSnackbar } = useSnackbar();
   const { setUser, user } = useAuth();
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isAdding, setisAdding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const LEFT_W = 320;
@@ -48,22 +28,27 @@ const TasksDashboard = () => {
   };
 
   useEffect(() => {
-    // api call to get tasks
-    setTasks(dummyTasks);
+    const fetchTasks = async () => {
+      // api call to get tasks
+      const res = await api<{ tasks: Task[] }>("/api/tasks", {
+        method: "GET",
+      });
+      const tasks = res.tasks;
+      setTasks(tasks);
+    };
+    fetchTasks();
   }, []);
 
   const updateIsAdding = () => {
     setisAdding((prev) => !prev);
   };
   const handleCreateTask = async (payload: AddTaskPayload) => {
-    console.log(payload);
     // api call
     try {
-      const res = await api<{ task: Task }>("/api/tasks", {
+      const { task } = await api<{ task: Task }>("/api/tasks", {
         method: "POST",
         body: JSON.stringify({ ...payload }),
       });
-      const task = res.task;
       // if successful, add task to list
       setTasks((prev) => [...prev, task]);
     } catch (e) {
@@ -72,7 +57,41 @@ const TasksDashboard = () => {
       } else showSnackbar(UNEXPECTED_ERROR_MESSAGE);
     }
   };
-
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await api<{ task: Pick<Task, "id"> }>(`/api/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    } catch (e) {
+      if (e instanceof ApiError) {
+        showSnackbar(e.message);
+      } else showSnackbar(UNEXPECTED_ERROR_MESSAGE);
+    }
+  };
+  const handleUpdateTask = async (payload: updateTaskPayload) => {
+    try {
+      const { task: updatedTask } = await api<{ task: Task }>(
+        `/api/tasks/${payload.task_id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            startdate: payload.startdate,
+            deadline: payload.deadline,
+            title: payload.title,
+          }),
+        },
+      );
+      setTasks((prev) =>
+        prev.map((task) => (task.id == updatedTask.id ? updatedTask : task)),
+      );
+    } catch (e) {
+      if (e instanceof ApiError) {
+        showSnackbar(e.message);
+      } else showSnackbar(UNEXPECTED_ERROR_MESSAGE);
+      throw e;
+    }
+  };
   return (
     <>
       <Box sx={{ display: "flex", minHeight: "100dvh", width: "100%" }}>
@@ -112,7 +131,12 @@ const TasksDashboard = () => {
               Today
             </Typography>
             {tasks.map((task) => (
-              <TaskItem task={task} />
+              <TaskItem
+                key={task.id}
+                task={task}
+                onDelete={handleDeleteTask}
+                onUpdate={handleUpdateTask}
+              />
             ))}
             {isAdding ? null : (
               <Button

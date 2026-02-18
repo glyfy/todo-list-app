@@ -1,7 +1,7 @@
 export type Task = {
-  user_id: string;
+  id: string;
   title: string;
-  startDate: string;
+  startdate: string;
   deadline?: string;
   completedAt?: string;
 };

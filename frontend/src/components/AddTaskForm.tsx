@@ -1,10 +1,12 @@
 import { Button, Divider, Stack, TextField } from "@mui/material";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { DateTimePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useRef, useState } from "react";
 import dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
+import { useAuth } from "../../AuthContext";
 
 type AddTaskFormProps = {
   onCancel: () => void;
@@ -14,8 +16,14 @@ type AddTaskFormProps = {
 
 export type AddTaskPayload = {
   title: string;
-  startDate: Date;
-  deadline?: Date;
+  startdate: string;
+  deadline?: string | null;
+  user_id: string;
+};
+
+export type DeleteTaskPayload = {
+  id: string;
+  user_id: string;
 };
 
 export default function AddTaskForm({
@@ -24,19 +32,24 @@ export default function AddTaskForm({
   submitting,
 }: AddTaskFormProps) {
   const [title, setTitle] = useState("");
-  const [startDate, setStartDate] = useState(dayjs());
-  const [deadline, setDeadline] = useState(null);
-  const [startDatePickerOpen, setStartDatePickerOpen] = useState(false);
+  const [startdate, setstartdate] = useState<Dayjs>(dayjs());
+  const [deadline, setDeadline] = useState<Dayjs | null>(null);
+  const [startdatePickerOpen, setstartdatePickerOpen] = useState(false);
   const [deadlinePickerOpen, setDeadlinePickerOpen] = useState(false);
   const startBtnRef = useRef<HTMLButtonElement | null>(null);
   const deadlineBtnRef = useRef<HTMLButtonElement | null>(null);
+  const { user } = useAuth();
 
   const handleSubmit = () => {
     onSubmit({
       title: title.trim(),
-      startDate: startDate.toDate(),
-      deadline: deadline?.toDate(),
+      startdate: startdate.toISOString(),
+      deadline: deadline ? deadline?.toISOString() : null,
+      user_id: user.id,
     });
+    setTitle("");
+    setstartdate(dayjs());
+    setDeadline(null);
   };
 
   return (
@@ -54,16 +67,17 @@ export default function AddTaskForm({
           variant="standard"
           slotProps={{ input: { disableUnderline: true } }}
           onChange={(e) => setTitle(e.target.value)}
+          value={title}
         />
         <Stack direction="row" gap={1}>
           <Button
             variant="outlined"
             color="secondary"
             startIcon={<CalendarTodayIcon />}
-            onClick={() => setStartDatePickerOpen(true)}
+            onClick={() => setstartdatePickerOpen(true)}
             ref={startBtnRef}
           >
-            {startDate ? startDate.format("MMM D YYYY") : "Start Date"}
+            {startdate ? startdate.format("MMM D YYYY, h:mm A") : "Start Date"}
           </Button>
           <Button
             variant="outlined"
@@ -72,17 +86,20 @@ export default function AddTaskForm({
             onClick={() => setDeadlinePickerOpen(true)}
             ref={deadlineBtnRef}
           >
-            {deadline ? deadline.format("MMM D YYYY") : "Deadline"}
+            {deadline ? deadline.format("MMM D YYYY, h:mm A") : "Deadline"}
           </Button>
         </Stack>
 
-        <DatePicker
-          label="Start Date"
-          open={startDatePickerOpen}
-          onClose={() => setStartDatePickerOpen(false)}
-          value={startDate}
-          onChange={(v) => setStartDate(v)}
-          minDate={startDate ?? dayjs()}
+        <DateTimePicker
+          label="Start Date & Time"
+          open={startdatePickerOpen}
+          onClose={() => setstartdatePickerOpen(false)}
+          value={startdate}
+          onChange={(v) => {
+            if (v) setstartdate(v);
+          }}
+          timeSteps={{ minutes: 1 }}
+          minDateTime={dayjs()}
           slotProps={{
             popper: {
               anchorEl: startBtnRef.current,
@@ -91,13 +108,14 @@ export default function AddTaskForm({
             textField: { sx: { display: "none" } },
           }}
         />
-        <DatePicker
-          label="Deadline"
+        <DateTimePicker
+          label="Deadline & Time"
           open={deadlinePickerOpen}
           onClose={() => setDeadlinePickerOpen(false)}
           value={deadline}
           onChange={(v) => setDeadline(v)}
-          minDate={startDate ?? dayjs()}
+          timeSteps={{ minutes: 1 }}
+          minDateTime={startdate ?? dayjs()}
           slotProps={{
             popper: {
               anchorEl: deadlineBtnRef.current,

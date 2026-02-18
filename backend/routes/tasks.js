@@ -74,15 +74,61 @@ router.post("/", async (req, res) => {
 
 router.patch("/:id", async (req, res) => {
   try {
-    // read title, change startdate, dueat, completedat from req.body
-    const { title, startdate, deadline } = req.body;
-    // if title is empty or not string throw error
+    const { id: task_id } = req.params;
+    const toTrimmedOrNull = (v) => {
+      if (typeof v !== "string") return null;
+      const t = v.trim();
+      return t.length ? t : null;
+    };
 
-    // for dates if empty or not string throw error
+    let { title, startdate, deadline } = req.body;
+
+    if (typeof title !== "string" || title.trim().length === 0) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+    title = title.trim();
+
+    startdate = toTrimmedOrNull(startdate);
+    deadline = toTrimmedOrNull(deadline); // optional
+
+    // Validate date strings if provided
+    const startTs = startdate ? new Date(startdate).getTime() : null;
+    const dueTs = deadline ? new Date(deadline).getTime() : null;
+
+    if (startdate && Number.isNaN(startTs)) {
+      return res.status(400).json({ error: "Invalid startdate format" });
+    }
+    if (deadline && Number.isNaN(dueTs)) {
+      return res.status(400).json({ error: "Invalid deadline format" });
+    }
+
+    // Ensure deadline > startdate when both exist
+    if (startTs !== null && dueTs !== null && dueTs <= startTs) {
+      return res
+        .status(400)
+        .json({ error: "Deadline must be later than start date" });
+    }
+
     // send update query to db
+    const result = await pool.query(
+      `
+      UPDATE tasks
+      SET
+        startdate = $1,
+        deadline = $2,
+        title = $3
+      WHERE id = $4
+      returning id, user_id, title, startdate, deadline, completed_at;
+      `,
+      [startdate, deadline, title, task_id],
+    );
+    return res.status(200).json({ task: result.rows[0] });
+
     // return status 200 and updated task
   } catch (error) {
     // status 500
+    console.error(error);
+    return res.status(500).json("Internal server error");
   }
 });
 
