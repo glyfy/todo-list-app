@@ -4,6 +4,21 @@ const pool = require("../db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+function setSessionCookie(res, user) {
+  const token = jwt.sign(
+    { user_id: user.id, email: user.email },
+    process.env.JWT_SECRET_TOKEN,
+    { expiresIn: "7d" },
+  );
+
+  res.cookie("session", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+}
+
 router.post("/register", async (req, res) => {
   try {
     // get the name, email and password
@@ -27,8 +42,10 @@ router.post("/register", async (req, res) => {
             `,
       [email.toLowerCase(), hashed_password, name],
     );
+    const user = result.rows[0];
+    setSessionCookie(res, user);
     // return status 201 with the newly added user
-    return res.status(201).json({ user: result.rows[0] });
+    return res.status(201).json({ user });
   } catch (error) {
     // return status code and useful info to frontend about error
     if (error.code == "23505") {
@@ -65,19 +82,7 @@ router.post("/login", async (req, res) => {
     if (!ok) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
-    // issue json webtoken
-    const token = jwt.sign(
-      { user_id: user.id, email: user.email },
-      process.env.JWT_SECRET_TOKEN,
-      { expiresIn: "7d" },
-    );
-    // set http only cookie
-    res.cookie("session", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setSessionCookie(res, user);
     // return status200 and user json
     return res.status(200).json({
       user: { id: user.id, email: user.email, name: user.name },
