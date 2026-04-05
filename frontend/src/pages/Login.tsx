@@ -36,6 +36,7 @@ const Login = () => {
   const [emailTouched, setEmailTouched] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { showSnackbar } = useSnackbar();
   const { setUser } = useAuth();
   //   const navigate = useNavigate();
@@ -58,6 +59,7 @@ const Login = () => {
     }
     const data = new FormData(event.currentTarget);
     try {
+      setIsSubmitting(true);
       // send http to backend
       const { user } = await api<LoginResponse>("/api/auth/login", {
         method: "POST",
@@ -83,6 +85,8 @@ const Login = () => {
         console.error(error);
         showSnackbar("Unexpected error occured. Please try again.");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
   // handleclick function for the submit element
@@ -254,8 +258,9 @@ const Login = () => {
                 color="primary"
                 type="submit"
                 onClick={validateInputs}
+                disabled={isSubmitting}
               >
-                Log in
+                {isSubmitting ? "Logging in..." : "Log In"}
               </Button>
 
               {/* // typography terms and conditions */}

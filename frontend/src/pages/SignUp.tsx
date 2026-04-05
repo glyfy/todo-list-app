@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Stack from "@mui/material/Stack";
 import Content from "../components/Content";
 import Card from "@mui/material/Card";
@@ -15,12 +15,36 @@ import IconButton from "@mui/material/IconButton";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import Visibility from "@mui/icons-material/Visibility";
 import { FormHelperText, Link, OutlinedInput } from "@mui/material";
+import { api } from "../lib/api";
+import { ApiError } from "../types/api";
+import { useSnackbar } from "../../SnackbarProvider";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../AuthContext";
+import { User } from "../types/user";
 
 const SignUp = () => {
+  type RegisterResponse = {
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      created_at: string;
+    };
+  };
+
+  const navigate = useNavigate();
+  const { showSnackbar } = useSnackbar();
+  const { setUser } = useAuth();
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [nameError, setNameError] = React.useState(false);
   const [emailError, setEmailError] = React.useState(false);
   const [passwordError, setPasswordError] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [emailTouched, setEmailTouched] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -32,27 +56,18 @@ const SignUp = () => {
   ) => {
     event.preventDefault();
   };
-  // handlesubmit function for the form element
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (emailError || passwordError) {
-      return;
-    }
-    const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
-    });
-    // send http to backend
-    // if success, log user into next page
-  };
-  // handleclick function for the submit element
+
   const validateInputs = () => {
-    const email = document.getElementById("email") as HTMLInputElement;
-    const password = document.getElementById("password") as HTMLInputElement;
     let isValid = true;
 
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
+    if (!name.trim()) {
+      setNameError(true);
+      isValid = false;
+    } else {
+      setNameError(false);
+    }
+
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
       setEmailError(true);
       setEmailTouched(false);
       isValid = false;
@@ -60,14 +75,55 @@ const SignUp = () => {
       setEmailError(false);
     }
 
-    if (!password.value || password.value.length < 6) {
+    if (!password || password.length < 8) {
       setPasswordError(true);
       isValid = false;
     } else {
       setPasswordError(false);
     }
+
     return isValid;
   };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!validateInputs()) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const { user } = await api<RegisterResponse>("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+      setUser({ id: user.id, email: user.email, name: user.name } as User);
+      showSnackbar("Account created.", "success");
+      navigate("/");
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 400) {
+          showSnackbar(error.message, "error");
+        } else if (error.status === 409) {
+          setEmailError(true);
+          showSnackbar("That email is already registered.", "error");
+        } else if (error.status >= 500) {
+          showSnackbar("Server error. Please try again.", "error");
+        }
+      } else {
+        console.error(error);
+        showSnackbar("Unexpected error occurred. Please try again.", "error");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Grid container sx={{ minHeight: "100dvh", minWidth: "100%" }}>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -138,14 +194,41 @@ const SignUp = () => {
             <Divider />
             {/* // box for login forms (label form) */}
             <Stack spacing={2} component="form" onSubmit={handleSubmit}>
+              <FormControl>
+                <TextField
+                  variant="outlined"
+                  label="Name"
+                  id="name"
+                  value={name}
+                  onFocus={() => {
+                    setNameError(false);
+                  }}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                  }}
+                  placeholder="Enter your name..."
+                  sx={{
+                    "& .MuiFilledInput-input": {
+                      backgroundColor: "#ffffff",
+                    },
+                  }}
+                />
+                <FormHelperText error={nameError}>
+                  {nameError ? "Please enter your name" : ""}
+                </FormHelperText>
+              </FormControl>
               {/* // formcontrol, label: email, textfield */}
               <FormControl>
                 <TextField
                   variant="outlined"
                   label="Email"
                   id="email"
+                  value={email}
                   onFocus={() => {
                     setEmailError(false);
+                  }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
                   }}
                   placeholder="Enter your personal or your work email..."
                   sx={{
@@ -171,10 +254,14 @@ const SignUp = () => {
                       backgroundColor: "#ffffff",
                     },
                   }}
+                  value={password}
                   onFocus={() => {
                     setPasswordError(false);
                   }}
                   id="password"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                  }}
                   type={showPassword ? "text" : "password"}
                   endAdornment={
                     <InputAdornment position="end">
@@ -196,7 +283,9 @@ const SignUp = () => {
                   label="Password"
                 />
                 <FormHelperText error={passwordError}>
-                  {passwordError ? "Please enter a valid password" : ""}
+                  {passwordError
+                    ? "Password must be at least 8 characters"
+                    : ""}
                 </FormHelperText>
               </FormControl>
               {/* // button "sign up with email" (label submit) */}
@@ -210,9 +299,9 @@ const SignUp = () => {
                 variant="contained"
                 color="primary"
                 type="submit"
-                onClick={validateInputs}
+                disabled={isSubmitting}
               >
-                Sign up with Email
+                {isSubmitting ? "Creating account..." : "Sign up with Email"}
               </Button>
               {/* // typography terms and conditions */}
               <Typography sx={{ fontWeight: "400", fontSize: "13px" }}>
